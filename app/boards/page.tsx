@@ -121,7 +121,7 @@ export default function BoardsPage() {
                     </div>
                     <h2 style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0' }}>{team.name}</h2>
                   </div>
-                  <BoardGrid boards={teamBoards} onAddBoard={() => setShowCreateBoard(true)} />
+                  <BoardGrid boards={teamBoards} onAddBoard={() => setShowCreateBoard(true)} onRenamed={load} />
                 </section>
               )
             })
@@ -130,7 +130,7 @@ export default function BoardsPage() {
               <h2 style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 16 }}>
                 {teams.find((t) => t.id === selectedTeam)?.name}
               </h2>
-              <BoardGrid boards={filteredBoards} onAddBoard={() => setShowCreateBoard(true)} />
+              <BoardGrid boards={filteredBoards} onAddBoard={() => setShowCreateBoard(true)} onRenamed={load} />
             </section>
           )}
 
@@ -159,31 +159,11 @@ export default function BoardsPage() {
   )
 }
 
-function BoardGrid({ boards, onAddBoard }: { boards: Board[]; onAddBoard: () => void }) {
+function BoardGrid({ boards, onAddBoard, onRenamed }: { boards: Board[]; onAddBoard: () => void; onRenamed: () => void }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14 }}>
       {boards.map((board) => (
-        <Link key={board.id} href={`/boards/${board.id}`} style={{ textDecoration: 'none' }}>
-          <div style={{
-            background: board.coverColor,
-            borderRadius: 10,
-            height: 120,
-            padding: 14,
-            cursor: 'pointer',
-            transition: 'transform 0.15s, box-shadow 0.15s',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
-          >
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)', borderRadius: 10 }} />
-            <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 700, fontSize: 15, color: 'white', lineHeight: 1.3 }}>{board.title}</span>
-              {board.team && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>{board.team.name}</span>}
-            </div>
-          </div>
-        </Link>
+        <BoardCard key={board.id} board={board} onRenamed={onRenamed} />
       ))}
       <button
         onClick={onAddBoard}
@@ -199,6 +179,88 @@ function BoardGrid({ boards, onAddBoard }: { boards: Board[]; onAddBoard: () => 
       >
         + Criar Board
       </button>
+    </div>
+  )
+}
+
+function BoardCard({ board, onRenamed }: { board: Board; onRenamed: () => void }) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(board.title)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    if (editing) inputRef.current?.select()
+  }, [editing])
+
+  async function save() {
+    const trimmed = value.trim()
+    if (trimmed && trimmed !== board.title) {
+      await fetch(`/api/boards/${board.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: trimmed }),
+      })
+      onRenamed()
+    } else {
+      setValue(board.title)
+    }
+    setEditing(false)
+  }
+
+  return (
+    <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', height: 120 }}>
+      <div
+        style={{
+          background: board.coverColor,
+          borderRadius: 10,
+          height: 120,
+          padding: 14,
+          cursor: 'pointer',
+          transition: 'transform 0.15s, box-shadow 0.15s',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+        onClick={() => !editing && router.push(`/boards/${board.id}`)}
+        onMouseEnter={(e) => { if (!editing) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)' } }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
+      >
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)', borderRadius: 10 }} />
+        <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          {editing ? (
+            <input
+              ref={inputRef}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onBlur={save}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') save()
+                if (e.key === 'Escape') { setValue(board.title); setEditing(false) }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'rgba(0,0,0,0.5)',
+                border: '1px solid rgba(255,255,255,0.4)',
+                borderRadius: 4,
+                color: 'white',
+                fontWeight: 700,
+                fontSize: 15,
+                padding: '2px 6px',
+                width: '100%',
+                outline: 'none',
+              }}
+            />
+          ) : (
+            <span
+              style={{ fontWeight: 700, fontSize: 15, color: 'white', lineHeight: 1.3, cursor: 'text' }}
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setValue(board.title); setEditing(true) }}
+            >
+              {board.title}
+            </span>
+          )}
+          {board.team && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>{board.team.name}</span>}
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useBoardStore } from '@/store/boardStore'
@@ -13,6 +13,9 @@ export default function BoardPage({ params }: { params: { boardId: string } }) {
   const { board, isLoading, loadBoard } = useBoardStore()
   const { isCardModalOpen, currentUserName, logout, setCurrentUser } = useUIStore()
   const [starLoading, setStarLoading] = useState(false)
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleValue, setTitleValue] = useState('')
+  const titleInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem('kanban_user')
@@ -25,6 +28,23 @@ export default function BoardPage({ params }: { params: { boardId: string } }) {
   function handleLogout() {
     logout()
     router.push('/login')
+  }
+
+  useEffect(() => {
+    if (editingTitle) titleInputRef.current?.select()
+  }, [editingTitle])
+
+  async function saveTitle() {
+    const trimmed = titleValue.trim()
+    if (trimmed && trimmed !== board?.title) {
+      await fetch(`/api/boards/${board!.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: trimmed }),
+      })
+      loadBoard(params.boardId)
+    }
+    setEditingTitle(false)
   }
 
   async function toggleStar() {
@@ -64,7 +84,32 @@ export default function BoardPage({ params }: { params: { boardId: string } }) {
           ← Boards
         </Link>
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.2)' }} />
-        <h1 style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0' }}>{board.title}</h1>
+        {editingTitle ? (
+          <input
+            ref={titleInputRef}
+            value={titleValue}
+            onChange={(e) => setTitleValue(e.target.value)}
+            onBlur={saveTitle}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') saveTitle()
+              if (e.key === 'Escape') setEditingTitle(false)
+            }}
+            style={{
+              fontSize: 16, fontWeight: 700, color: '#e2e8f0',
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.3)',
+              borderRadius: 4, padding: '2px 8px',
+              outline: 'none', width: 220,
+            }}
+          />
+        ) : (
+          <h1
+            style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', cursor: 'text' }}
+            onClick={() => { setTitleValue(board.title); setEditingTitle(true) }}
+          >
+            {board.title}
+          </h1>
+        )}
         {board.team && (
           <span style={{ fontSize: 13, color: 'var(--text-muted)', padding: '2px 8px', background: 'rgba(255,255,255,0.07)', borderRadius: 4 }}>
             {board.team.name}
