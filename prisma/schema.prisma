@@ -15,8 +15,9 @@ model Team {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members TeamMember[]
-  boards  Board[]
+  members  TeamMember[]
+  boards   Board[]
+  canvases Canvas[]
 }
 
 model User {
@@ -172,4 +173,44 @@ model Comment {
 
   card   Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Canvas {
+  id        String   @id @default(cuid())
+  title     String
+  teamId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team     Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  elements CanvasElement[]
+  edges    CanvasEdge[]
+}
+
+model CanvasElement {
+  id       String @id @default(cuid())
+  type     String
+  x        Float
+  y        Float
+  width    Float
+  height   Float
+  content  String @default("")
+  style    String @default("{}")
+  canvasId String
+
+  canvas    Canvas       @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  fromEdges CanvasEdge[] @relation("EdgeFrom")
+  toEdges   CanvasEdge[] @relation("EdgeTo")
+}
+
+model CanvasEdge {
+  id       String  @id @default(cuid())
+  fromId   String
+  toId     String
+  label    String?
+  canvasId String
+
+  canvas Canvas        @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  from   CanvasElement @relation("EdgeFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to     CanvasElement @relation("EdgeTo", fields: [toId], references: [id], onDelete: Cascade)
 }

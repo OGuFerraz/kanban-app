@@ -65,6 +65,7 @@ export default function BoardsPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button className="btn-secondary" style={{ fontSize: 13, padding: '5px 12px' }} onClick={() => setShowCreateTeam(true)}>+ Equipe</button>
           <button className="btn-primary" style={{ fontSize: 13, padding: '5px 12px' }} onClick={() => setShowCreateBoard(true)}>+ Board</button>
+          <button className="btn-ghost" style={{ fontSize: 13, padding: '5px 12px' }} onClick={() => router.push('/canvas')}>🎨 Canvas</button>
           {currentUserName && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 4, paddingLeft: 12, borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
               <Avatar user={{ name: currentUserName, color: '#6366f1' }} size="sm" />

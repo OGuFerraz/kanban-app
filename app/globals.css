@@ -81,6 +81,9 @@ html, body {
 }
 .input-field:focus { border-color: var(--accent); background: rgba(255,255,255,0.1); }
 .input-field::placeholder { color: var(--text-muted); }
+select.input-field { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; cursor: pointer; }
+select.input-field option { background: #1a2535; color: #e2e8f0; }
+div:hover > .canvas-delete-btn { opacity: 0.5 !important; }
 
 .sidebar-item { padding: 8px 12px; border-radius: 8px; color: var(--text-secondary); cursor: pointer; transition: background 0.1s, color 0.1s; font-size: 14px; }
 .sidebar-item:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
